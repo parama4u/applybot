@@ -4,7 +4,8 @@ setup(
     name='applybot',
     version='',
     packages=['selenium==4.5.0',
-              'webdriver_manager=3.8.3'
+              'webdriver_manager=3.8.3',
+              'pandas==1.5.0',
               ],
     url='',
     license='',
