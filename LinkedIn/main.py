@@ -1,7 +1,9 @@
 # This is a sample Python script.
+import random
 import time
 import  configparser,os
 import pandas as pd
+from bs4 import  BeautifulSoup
 
 # Press Shift+F10 to execute it or replace it with your code.
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
@@ -73,13 +75,20 @@ class LINKEDIN(object):
             self.iter_apply()
 
     def get_jobs(self):
+        for i in range(0,20):
+            self.driver.execute_script(f"window.scrollTo(0,{200*i})")
+            time.sleep(random.randint(0,2))
+        self.pge_html = BeautifulSoup(self.driver.page_source,"html.parser")
         self.links = self.driver.find_elements("xpath",
                                            '//div[@data-job-id]'
                                            )
+        print(len(self.links))
 
     def iter_apply(self):
-        print('ok')
-        time.sleep(30)
-        pass
+        self.get_jobs()
+        for link in self.links:
+            link.click()
+            time.sleep(random.randint(1,3))
+
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
