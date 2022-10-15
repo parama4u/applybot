@@ -66,22 +66,20 @@ class LINKEDIN(object):
         time.sleep(2)
 
     def search(self):
-        self.driver.get('https://www.linkedin.com/jobs/')
-        data = pd.read_csv('LinkedIn/search.csv'
-                           )
-        # txt_keyword = self.driver.find_element("id","jobs-search-box-keyword-id-ember25")
-        # txt_location = self.driver.find_element("id","jobs-search-box-location-id-ember25")
+        data = pd.read_csv('LinkedIn/search.csv')
         for index,record in data.iterrows():
-            txt_keyword = self.driver.find_element(By.XPATH, "//*[contains(@id,'jobs-search-box-keyword-id')]")
-            txt_keyword.clear()
-            txt_keyword.send_keys(record['keyword'])
-            txt_keyword.send_keys(Keys.ENTER)
-            time.sleep(10)
-            txt_location = self.driver.find_element(By.XPATH, "//*[contains(@id,'jobs-search-box-location-id')]")
-            txt_location.clear()
-            print(record['location'])
-            txt_location.send_keys(record['location'])
-            txt_location.send_keys(Keys.RETURN)
-            time.sleep(10)
+            query = f"?f_AL=true&f_TPR=r86400&keywords={record['keyword'].upper()}&location={record['location']}"
+            self.driver.get(f"https://www.linkedin.com/jobs/search/{query}")
+            self.iter_apply()
+
+    def get_jobs(self):
+        self.links = self.driver.find_elements("xpath",
+                                           '//div[@data-job-id]'
+                                           )
+
+    def iter_apply(self):
+        print('ok')
+        time.sleep(30)
+        pass
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
