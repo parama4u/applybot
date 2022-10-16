@@ -33,6 +33,7 @@ class LINKEDIN(object):
         cfg.read('LinkedIn/config.ini')
         self.user_name = cfg.get('LOGIN','USERNAME')
         self.password = cfg.get('LOGIN','PASSWORD')
+        self.jobs_per_page = 25
 
     def browser_options(self):
         options = Options()
@@ -49,6 +50,7 @@ class LINKEDIN(object):
     def apply(self):
         self.open()
         self.search()
+        self.iter_apply()
 
     def open(self):
         self.driver.get(self.HOME)
@@ -69,25 +71,34 @@ class LINKEDIN(object):
     def search(self):
         data = pd.read_csv('LinkedIn/search.csv')
         for index,record in data.iterrows():
-            query = f"?f_AL=true&f_TPR=r86400&keywords={record['keyword'].upper()}&location={record['location']}"
-            self.driver.get(f"https://www.linkedin.com/jobs/search/{query}")
-            self.iter_apply()
+            self.path = f"https://www.linkedin.com/jobs/search/?f_AL=true&f_TPR=r86400&keywords={record['keyword'].upper()}&location={record['location']}"
+            self.driver.get(self.path)
+            time.sleep(5)
+            self.job_ids = []
+            self.pages = self.driver.find_elements("xpath", '//li[@data-test-pagination-page-btn]')[-1].get_attribute(
+                'data-test-pagination-page-btn')
+
+            self.get_jobs()
+            for i in range(1,int(self.pages)):
+                self.driver.get(f"{self.path}&start={(i)*self.jobs_per_page}")
+                time.sleep(5)
+                self.get_jobs()
+
+
 
     def get_jobs(self):
         for i in range(0,20):
             self.driver.execute_script(f"window.scrollTo(0,{200*i})")
             time.sleep(random.randint(0,2))
         self.pge_html = BeautifulSoup(self.driver.page_source,"html.parser")
-        self.links = self.driver.find_elements("xpath",
-                                           '//div[@data-job-id]'
-                                           )
-        print(len(self.links))
+        self.jobs = self.driver.find_elements("xpath",'//li[@data-occludable-job-id]')
+
+        for job in self.jobs:
+            self.job_ids.append(job.get_attribute('data-occludable-job-id'))
+
 
     def iter_apply(self):
-        self.get_jobs()
-        for link in self.links:
-            link.click()
-            time.sleep(random.randint(1,3))
+        print(len(self.job_ids))
 
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
