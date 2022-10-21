@@ -1,7 +1,7 @@
 # This is a sample Python script.
 import random
 import time
-import  configparser,os
+import  configparser,re
 import pandas as pd
 from bs4 import  BeautifulSoup
 
@@ -24,16 +24,18 @@ from webdriver_manager.chrome import ChromeDriverManager
 class LINKEDIN(object):
     def __init__(self):
         self.HOME = "https://www.linkedin.com/uas/login"
+        self.JOB='https://www.linkedin.com/jobs/view/'
         self.driver = wd.Chrome(ChromeDriverManager().install(),
                                 options=self.browser_options())
         self.set_configs()
 
     def set_configs(self):
-        cfg = configparser.ConfigParser()
-        cfg.read('LinkedIn/config.ini')
-        self.user_name = cfg.get('LOGIN','USERNAME')
-        self.password = cfg.get('LOGIN','PASSWORD')
+        self.cfg = configparser.ConfigParser()
+        self.cfg.read('LinkedIn/config.ini')
+        self.user_name = self.cfg.get('LOGIN','USERNAME')
+        self.password = self.cfg.get('LOGIN','PASSWORD')
         self.jobs_per_page = 25
+        self.apply_button = None
 
     def browser_options(self):
         options = Options()
@@ -84,21 +86,39 @@ class LINKEDIN(object):
                 time.sleep(5)
                 self.get_jobs()
 
-
-
     def get_jobs(self):
         for i in range(0,20):
             self.driver.execute_script(f"window.scrollTo(0,{200*i})")
             time.sleep(random.randint(0,2))
-        self.pge_html = BeautifulSoup(self.driver.page_source,"html.parser")
         self.jobs = self.driver.find_elements("xpath",'//li[@data-occludable-job-id]')
 
         for job in self.jobs:
             self.job_ids.append(job.get_attribute('data-occludable-job-id'))
 
+    def ignore_jobs(self) -> bool:
+        res = False
+        self.ignore_keys = [self.cfg.get('IGNORE', 'desc')]
+
+        self.pge_html = BeautifulSoup(self.driver.page_source, "html.parser")
+
+
+        for key in self.ignore_keys:
+            if self.pge_html(text=re.compile(key,re.I)):
+                print(f"Skip application to {self.driver.current_url}, found {key} in desc")
+                res=True
+        return res
+
+
+
 
     def iter_apply(self):
-        print(len(self.job_ids))
+        for job_id in self.job_ids:
+            job_page =f'{self.JOB}{job_id}'
+            self.driver.get(job_page)
+            if not self.ignore_jobs():
+                print(f"apply for {job_page}")
+
+
 
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
