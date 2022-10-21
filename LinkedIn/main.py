@@ -72,6 +72,7 @@ class LINKEDIN(object):
 
     def search(self):
         data = pd.read_csv('LinkedIn/search.csv')
+
         for index,record in data.iterrows():
             self.path = f"https://www.linkedin.com/jobs/search/?f_AL=true&f_TPR=r86400&keywords={record['keyword'].upper()}&location={record['location']}"
             self.driver.get(self.path)
