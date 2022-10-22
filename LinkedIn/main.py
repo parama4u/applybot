@@ -121,7 +121,7 @@ class LINKEDIN(object):
         try:
             self.res_elelements = self.driver.find_elements(bt_by, bt_value)
             return self.res_elelements[0]
-        except exceptions.NoSuchElementException:
+        except (exceptions.NoSuchElementException, IndexError):
             print(f"{bt_name} not found. Skipping {self.driver.current_url}.")
             return None
 
@@ -171,9 +171,11 @@ class LINKEDIN(object):
             self.ans_queston(error)
 
     def ans_queston(self, error):
-        question = error.text.replace("\nRequired\nPlease enter a valid answer")
+        question = error.text.replace("\nRequired\nPlease enter a valid answer", "")
         try:
-            answer = self.q_n_a["question"].str.contains(question)["answer"]
+            answer = self.q_n_a.loc[self.q_n_a["question"].str.contains(question)][
+                "answer"
+            ].values[0]
         except:
             print(
                 f"Answer for {question} Not found. Skipping  {self.driver.current_url}"
