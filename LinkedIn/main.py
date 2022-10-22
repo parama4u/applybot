@@ -10,6 +10,7 @@ from bs4 import BeautifulSoup
 
 
 from selenium import webdriver as wd
+from selenium.common import exceptions
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -34,6 +35,7 @@ class LINKEDIN(object):
         self.cfg.read("LinkedIn/config.ini")
         self.user_name = self.cfg.get("LOGIN", "USERNAME")
         self.password = self.cfg.get("LOGIN", "PASSWORD")
+        self.phone = self.cfg.get("LOGIN", "PHONE")
         self.jobs_per_page = 25
         self.apply_button = None
 
@@ -73,7 +75,6 @@ class LINKEDIN(object):
 
     def search(self):
         data = pd.read_csv("LinkedIn/search.csv")
-
         for index, record in data.iterrows():
             self.path = f"https://www.linkedin.com/jobs/search/?f_AL=true&f_TPR=r86400&keywords={record['keyword'].upper()}&location={record['location']}"
             self.driver.get(self.path)
@@ -82,7 +83,6 @@ class LINKEDIN(object):
             self.pages = self.driver.find_elements(
                 "xpath", "//li[@data-test-pagination-page-btn]"
             )[-1].get_attribute("data-test-pagination-page-btn")
-
             self.get_jobs()
             for i in range(1, int(self.pages)):
                 self.driver.get(f"{self.path}&start={(i)*self.jobs_per_page}")
@@ -94,36 +94,90 @@ class LINKEDIN(object):
             self.driver.execute_script(f"window.scrollTo(0,{200*i})")
             time.sleep(random.randint(0, 2))
         self.jobs = self.driver.find_elements("xpath", "//li[@data-occludable-job-id]")
-
         for job in self.jobs:
             self.job_ids.append(job.get_attribute("data-occludable-job-id"))
 
     def ignore_jobs(self) -> bool:
         res = False
         self.ignore_keys = self.cfg.get("IGNORE", "desc").split(",")
-
-        self.pge_html = BeautifulSoup(self.driver.page_source, "html.parser")
         txt = {
             "title": self.driver.find_element(
                 By.XPATH, "//*[contains(@class, 'jobs-unified-top-card')]"
-            ).text,
-            "description": self.driver.find_element(By.TAG_NAME, "article").text,
+            ).text.lower(),
+            "description": self.driver.find_element(
+                By.TAG_NAME, "article"
+            ).text.lower(),
         }
 
         for key in self.ignore_keys:
             for content in txt.keys():
-                if re.search(key, txt[content], re.I):
+                if re.search(key.lower(), txt[content], re.I):
                     print(
                         f"Skip application to {self.driver.current_url}, found {key} in {content}"
                     )
         return res
+
+    def application_fields(self, bt_name, bt_by, bt_value):
+        try:
+            self.res_elelements = self.driver.find_elements(bt_by, bt_value)
+            return self.res_elelements[0]
+        except exceptions.NoSuchElementException:
+            print(f"{bt_name} not found. Skipping {self.driver.current_url}.")
+            return None
+
+    def easy_apply(self):
+        apply_button = self.application_fields(
+            "Easy apply", By.XPATH, "//*[contains(@class, 'jobs-apply-button')]"
+        )
+        if apply_button:
+            apply_button.click()
+
+        phone_number = self.application_fields(
+            "Phone Number", By.XPATH, "//input[contains(@name,'phoneNumber')]"
+        )
+
+        if phone_number:
+            phone_number.clear()
+            phone_number.send_keys(self.phone)
+
+        for next_ in ("Contact Info", "Resume"):
+            nav = self.application_fields(
+                f"{next_}: Next",
+                By.CSS_SELECTOR,
+                "button[aria-label='Continue to next step']",
+            )
+            if nav:
+                nav.click()
+
+        self.addtional_questions()
+
+        submit_button = self.application_fields(
+            "Submit", By.CSS_SELECTOR, "button[aria-label='Submit application']"
+        )
+        if submit_button:
+            submit_button.click()
+
+    def addtional_questions(self):
+        review = self.application_fields(
+            By.CSS_SELECTOR, "button[aria-label='Review your application']"
+        )
+        if review:
+            review.click()
+
+        errors = self.application_fields(
+            By.CSS_SELECTOR, "p[data-test-form-element-error-message='true']"
+        )
+
+        for error in errors:
+            print(error)
 
     def iter_apply(self):
         for job_id in self.job_ids:
             job_page = f"{self.JOB}{job_id}"
             self.current_page = self.driver.get(job_page)
             if not self.ignore_jobs():
-                print(f"apply for {job_page}")
+                print(f"Applying for {job_page}")
+                self.easy_apply()
 
 
 # See PyCharm help at https://www.jetbrains.com/help/pycharm/
