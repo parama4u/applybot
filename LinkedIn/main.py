@@ -103,19 +103,25 @@ class LINKEDIN(object):
         self.ignore_keys = self.cfg.get("IGNORE", "desc").split(",")
 
         self.pge_html = BeautifulSoup(self.driver.page_source, "html.parser")
+        txt = {
+            "title": self.driver.find_element(
+                By.XPATH, "//*[contains(@class, 'jobs-unified-top-card')]"
+            ).text,
+            "description": self.driver.find_element(By.TAG_NAME, "article").text,
+        }
 
         for key in self.ignore_keys:
-            if self.pge_html(text=re.compile(key, re.I)):
-                print(
-                    f"Skip application to {self.driver.current_url}, found {key} in desc"
-                )
-                res = True
+            for content in txt.keys():
+                if re.search(key, txt[content], re.I):
+                    print(
+                        f"Skip application to {self.driver.current_url}, found {key} in {content}"
+                    )
         return res
 
     def iter_apply(self):
         for job_id in self.job_ids:
             job_page = f"{self.JOB}{job_id}"
-            self.driver.get(job_page)
+            self.current_page = self.driver.get(job_page)
             if not self.ignore_jobs():
                 print(f"apply for {job_page}")
 
