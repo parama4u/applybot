@@ -125,6 +125,15 @@ class LINKEDIN(object):
             print(f"{bt_name} not found. Skipping {self.driver.current_url}.")
             return None
 
+    def click_next(self, model_name):
+        nav = self.application_fields(
+            f"{model_name}: Next",
+            By.CSS_SELECTOR,
+            "button[aria-label='Continue to next step']",
+        )
+        if nav:
+            nav.click()
+
     def easy_apply(self):
         apply_button = self.application_fields(
             "Easy apply", By.XPATH, "//*[contains(@class, 'jobs-apply-button')]"
@@ -141,13 +150,7 @@ class LINKEDIN(object):
             phone_number.send_keys(self.phone)
 
         for next_ in ("Contact Info", "Resume"):
-            nav = self.application_fields(
-                f"{next_}: Next",
-                By.CSS_SELECTOR,
-                "button[aria-label='Continue to next step']",
-            )
-            if nav:
-                nav.click()
+            self.click_next(next_)
 
         self.addtional_questions()
 
@@ -158,18 +161,23 @@ class LINKEDIN(object):
             submit_button.click()
 
     def addtional_questions(self):
-        review = self.application_fields(
-            By.CSS_SELECTOR, "button[aria-label='Review your application']"
-        )
-        if review:
-            review.click()
+        self.click_next("Additioanl questions")
+        # self.application_fields("",
+        #     By.CSS_SELECTOR, "p[data-test-form-element-error-message='true']"
+        # )
+        self.application_fields("", By.CSS_SELECTOR, "div[aria-invalid='true']")
+        self.q_n_a = pd.read_csv("LinkedIn/additional_questions.csv")
+        for error in self.res_elelements:
+            self.ans_queston(error)
 
-        errors = self.application_fields(
-            By.CSS_SELECTOR, "p[data-test-form-element-error-message='true']"
-        )
-
-        for error in errors:
-            print(error)
+    def ans_queston(self, error):
+        question = error.text.replace("\nRequired\nPlease enter a valid answer")
+        try:
+            answer = self.q_n_a["question"].str.contains(question)["answer"]
+        except:
+            print(
+                f"Answer for {question} Not found. Skipping  {self.driver.current_url}"
+            )
 
     def iter_apply(self):
         for job_id in self.job_ids:
