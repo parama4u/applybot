@@ -100,7 +100,7 @@ class LINKEDIN(object):
 
     def ignore_jobs(self) -> bool:
         res = False
-        self.ignore_keys = [self.cfg.get("IGNORE", "desc")]
+        self.ignore_keys = self.cfg.get("IGNORE", "desc").split(",")
 
         self.pge_html = BeautifulSoup(self.driver.page_source, "html.parser")
 
