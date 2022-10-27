@@ -167,6 +167,8 @@ class LINKEDIN(object):
         )
         if submit_button:
             submit_button.click()
+            print(f"Application Submitted {self.driver.current_url}")
+            time.sleep(3)
 
     def addtional_questions(self):
         self.click_next("Additioanl questions")
@@ -205,11 +207,11 @@ class LINKEDIN(object):
                     )[0]
                 ).select_by_visible_text(answer)
             elif question_type == "fb-single-line-text":
-                question = (
-                    error.find_elements(By.TAG_NAME, "div")[0]
-                    .find_elements(By.TAG_NAME, "input")[0]
-                    .accessible_name.replace("* Required", "")
-                )
+                # question = (
+                #     error.find_elements(By.TAG_NAME, "div")[0]
+                #     .find_elements(By.TAG_NAME, "input")[0]
+                #     .accessible_name.replace("* Required", "")
+                # )
                 answer = self.q_n_a.loc[self.q_n_a["question"].str.contains(question)][
                     "answer"
                 ].values[0]
