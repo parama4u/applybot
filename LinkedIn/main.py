@@ -133,6 +133,14 @@ class LINKEDIN(object):
         )
         if nav:
             nav.click()
+        else:
+            nav = self.application_fields(
+                f"{model_name}: Review",
+                By.CSS_SELECTOR,
+                "button[aria-label='Review your application']",
+            )
+            if nav:
+                nav.click()
 
     def easy_apply(self):
         apply_button = self.application_fields(
@@ -173,12 +181,51 @@ class LINKEDIN(object):
     def ans_queston(self, error):
         question = error.text.replace("\nRequired\nPlease enter a valid answer", "")
         try:
-            answer = self.q_n_a.loc[self.q_n_a["question"].str.contains(question)][
-                "answer"
-            ].values[0]
-        except:
+
+            # answer = self.q_n_a.loc[self.q_n_a["question"].str.contains(question)][
+            #     "answer"
+            # ].values[0]
+            question_type = error.find_elements(By.TAG_NAME, "div")[0].get_attribute(
+                "class"
+            )
+            if question_type == "fb-dropdown":
+                from selenium.webdriver.support.ui import Select
+
+                question = (
+                    error.find_elements(By.TAG_NAME, "div")[0]
+                    .find_elements(By.TAG_NAME, "select")[0]
+                    .accessible_name.replace("* Required", "")
+                )
+                answer = self.q_n_a.loc[self.q_n_a["question"].str.contains(question)][
+                    "answer"
+                ].values[0]
+                Select(
+                    error.find_elements(By.TAG_NAME, "div")[0].find_elements(
+                        By.TAG_NAME, "select"
+                    )[0]
+                ).select_by_visible_text(answer)
+            elif question_type == "fb-single-line-text":
+                question = (
+                    error.find_elements(By.TAG_NAME, "div")[0]
+                    .find_elements(By.TAG_NAME, "input")[0]
+                    .accessible_name.replace("* Required", "")
+                )
+                answer = self.q_n_a.loc[self.q_n_a["question"].str.contains(question)][
+                    "answer"
+                ].values[0]
+                error.find_elements(By.TAG_NAME, "div")[0].find_elements(
+                    By.TAG_NAME, "input"
+                )[0].send_keys(answer)
+
+            else:
+                pass
+        except IndexError:
             print(
-                f"Answer for {question} Not found. Skipping  {self.driver.current_url}"
+                f"No Answer found for :  {question} . Skipping  {self.driver.current_url}"
+            )
+        except Exception as e:
+            print(
+                f"Exception {e} while answering {question} . Skipping  {self.driver.current_url}"
             )
 
     def iter_apply(self):
