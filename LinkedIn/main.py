@@ -3,6 +3,7 @@ import random
 import time
 import configparser, re
 import pandas as pd
+import selenium.common.exceptions
 from bs4 import BeautifulSoup
 
 # Press Shift+F10 to execute it or replace it with your code.
@@ -122,7 +123,7 @@ class LINKEDIN(object):
             self.res_elelements = self.driver.find_elements(bt_by, bt_value)
             return self.res_elelements[0]
         except (exceptions.NoSuchElementException, IndexError):
-            print(f"{bt_name} not found. Skipping {self.driver.current_url}.")
+            print(f"{bt_name} not found.")
             return None
 
     def click_next(self, model_name):
@@ -162,20 +163,27 @@ class LINKEDIN(object):
 
         self.addtional_questions()
 
-        submit_button = self.application_fields(
-            "Submit", By.CSS_SELECTOR, "button[aria-label='Submit application']"
-        )
+        try:
+            submit_button = self.application_fields(
+                "Submit", By.CSS_SELECTOR, "button[aria-label='Submit application']"
+            )
+        except selenium.common.exceptions.NoSuchElementException:
+            submit_button = self.application_fields(
+                "Submit", By.CSS_SELECTOR, "button[aria-label='Submit application']"
+            )
+
         if submit_button:
             submit_button.click()
             print(f"Application Submitted {self.driver.current_url}")
-            time.sleep(3)
+        else:
+            print(f"Skipping {self.driver.current_url}")
+        time.sleep(3)
 
     def addtional_questions(self):
-        self.click_next("Additioanl questions")
-        # self.application_fields("",
-        #     By.CSS_SELECTOR, "p[data-test-form-element-error-message='true']"
-        # )
-        self.application_fields("", By.CSS_SELECTOR, "div[aria-invalid='true']")
+        self.click_next("Additional Questions")
+        self.application_fields(
+            "Filed with errors", By.CSS_SELECTOR, "div[aria-invalid='true']"
+        )
         self.q_n_a = pd.read_csv("LinkedIn/additional_questions.csv")
         for error in self.res_elelements:
             self.ans_queston(error)
