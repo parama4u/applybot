@@ -2,8 +2,9 @@
 import random
 import time
 import configparser, re
-import pandas as pd
 import selenium.common.exceptions
+import csv
+import pandas as pd
 from bs4 import BeautifulSoup
 
 # Press Shift+F10 to execute it or replace it with your code.
@@ -144,6 +145,7 @@ class LINKEDIN(object):
                 nav.click()
 
     def easy_apply(self):
+        time.sleep(random.randint(3, 5))
         apply_button = self.application_fields(
             "Easy apply", By.XPATH, "//*[contains(@class, 'jobs-apply-button')]"
         )
@@ -162,6 +164,9 @@ class LINKEDIN(object):
             self.click_next(next_)
 
         self.addtional_questions()
+
+        for next_ in "Review":
+            self.click_next(next_)
 
         try:
             submit_button = self.application_fields(
@@ -184,9 +189,16 @@ class LINKEDIN(object):
         self.application_fields(
             "Filed with errors", By.CSS_SELECTOR, "div[aria-invalid='true']"
         )
-        self.q_n_a = pd.read_csv("LinkedIn/additional_questions.csv")
+        # self.q_n_a = pd.read_csv("LinkedIn/additional_questions.csv")
         for error in self.res_elelements:
             self.ans_queston(error)
+
+    def get_answer(self, question):
+        with open("LinkedIn/additional_questions.csv", "r") as file:
+            csv_file = csv.DictReader(file)
+            for row in csv_file:
+                if row["question"] in question:
+                    return row["answer"]
 
     def ans_queston(self, error):
         question = error.text.replace("\nRequired\nPlease enter a valid answer", "")
@@ -206,9 +218,7 @@ class LINKEDIN(object):
                     .find_elements(By.TAG_NAME, "select")[0]
                     .accessible_name.replace("* Required", "")
                 )
-                answer = self.q_n_a.loc[self.q_n_a["question"].str.contains(question)][
-                    "answer"
-                ].values[0]
+                answer = self.get_answer(question)
                 Select(
                     error.find_elements(By.TAG_NAME, "div")[0].find_elements(
                         By.TAG_NAME, "select"
@@ -220,15 +230,14 @@ class LINKEDIN(object):
                 #     .find_elements(By.TAG_NAME, "input")[0]
                 #     .accessible_name.replace("* Required", "")
                 # )
-                answer = self.q_n_a.loc[self.q_n_a["question"].str.contains(question)][
-                    "answer"
-                ].values[0]
+                answer = self.get_answer(question)
                 error.find_elements(By.TAG_NAME, "div")[0].find_elements(
                     By.TAG_NAME, "input"
                 )[0].send_keys(answer)
 
             else:
-                pass
+                print(question_type)
+
         except IndexError:
             print(
                 f"No Answer found for :  {question} . Skipping  {self.driver.current_url}"
