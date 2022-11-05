@@ -74,13 +74,12 @@ class LINKEDIN(object):
 
     def apply(self):
         self.open()
-        self.search()
-        self.iter_apply()
+        self.login()
+        self.search_apply()
 
     def open(self):
         self.driver.get(self.HOME)
-        time.sleep(2)
-        self.login()
+        time.sleep(random.randint(1, 3))
 
     def login(self):
         user_field = self.driver.find_element("id", "username")
@@ -90,16 +89,16 @@ class LINKEDIN(object):
         )
         user_field.send_keys(self.user_name)
         pw_field.send_keys(self.password)
-        time.sleep(2)
+        time.sleep(random.randint(1, 3))
         login_button.click()
-        time.sleep(2)
+        time.sleep(random.randint(1, 3))
 
-    def search(self):
+    def search_apply(self):
         data = pd.read_csv("LinkedIn/search.csv")
         for index, record in data.iterrows():
             self.path = f"https://www.linkedin.com/jobs/search/?f_AL=true&f_TPR=r86400&keywords={record['keyword'].upper()}&location={record['location']}"
             self.driver.get(self.path)
-            time.sleep(5)
+            time.sleep(random.randint(1, 3))
             self.job_ids = []
             try:
                 self.pages = self.driver.find_elements(
@@ -108,12 +107,15 @@ class LINKEDIN(object):
             except IndexError:
                 self.pages = 1
             self.get_jobs()
+            self.iter_apply()
             for i in range(1, int(self.pages)):
                 self.driver.get(f"{self.path}&start={(i)*self.jobs_per_page}")
-                time.sleep(5)
+                time.sleep(random.randint(1, 3))
                 self.get_jobs()
+                self.iter_apply()
 
     def get_jobs(self):
+        self.job_ids = []
         for i in range(0, 20):
             self.driver.execute_script(f"window.scrollTo(0,{200*i})")
             time.sleep(random.randint(0, 2))
@@ -203,7 +205,7 @@ class LINKEDIN(object):
             if submit_button:
                 submit_button.click()
                 log.info(f"Application Submitted {self.driver.current_url}")
-                time.sleep(3)
+                time.sleep(random.randint(1, 3))
         else:
             log.info(f"Skipping {self.driver.current_url}, Apply button not found")
 

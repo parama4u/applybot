@@ -18,10 +18,6 @@ def move_mouse():
         x, _ = pyautogui.position()
         pyautogui.moveTo(x + 200, pyautogui.position().y, duration=1.0)
         pyautogui.moveTo(x, pyautogui.position().y, duration=0.5)
-        pyautogui.keyDown("ctrl")
-        pyautogui.press("esc")
-        pyautogui.keyUp("ctrl")
-        pyautogui.press("esc")
         time.sleep(random.randint(0, 10))
 
 
