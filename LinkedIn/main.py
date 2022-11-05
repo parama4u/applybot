@@ -5,11 +5,8 @@ import configparser, re
 import selenium.common.exceptions
 import csv
 import pandas as pd
-from bs4 import BeautifulSoup
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-
+import logging, os
+from datetime import datetime
 
 from selenium import webdriver as wd
 from selenium.common import exceptions
@@ -19,8 +16,7 @@ from selenium.webdriver.chrome.options import Options
 
 from webdriver_manager.chrome import ChromeDriverManager
 
-
-# Press the green button in the gutter to run the script.
+log = logging.getLogger(__name__)
 
 
 class LINKEDIN(object):
@@ -40,6 +36,29 @@ class LINKEDIN(object):
         self.phone = self.cfg.get("LOGIN", "PHONE")
         self.jobs_per_page = 25
         self.apply_button = None
+        self.setup_logger()
+
+    def setup_logger(self) -> None:
+        dt: str = datetime.strftime(datetime.now(), "%m_%d_%y %H_%M_%S ")
+
+        if not os.path.isdir("./logs"):
+            os.mkdir("./logs")
+
+        # TODO need to check if there is a log dir available or not
+        logging.basicConfig(
+            filename=("./logs/linkedin" + str(dt) + ".log"),
+            filemode="w",
+            format="%(asctime)s::%(name)s::%(levelname)s::%(message)s",
+            datefmt="./logs/%d-%b-%y %H:%M:%S",
+        )
+        log.setLevel(logging.DEBUG)
+        c_handler = logging.StreamHandler()
+        c_handler.setLevel(logging.DEBUG)
+        c_format = logging.Formatter(
+            "%(asctime)s - %(levelname)s - %(message)s", "%H:%M:%S"
+        )
+        c_handler.setFormatter(c_format)
+        log.addHandler(c_handler)
 
     def browser_options(self):
         options = Options()
@@ -82,9 +101,12 @@ class LINKEDIN(object):
             self.driver.get(self.path)
             time.sleep(5)
             self.job_ids = []
-            self.pages = self.driver.find_elements(
-                "xpath", "//li[@data-test-pagination-page-btn]"
-            )[-1].get_attribute("data-test-pagination-page-btn")
+            try:
+                self.pages = self.driver.find_elements(
+                    "xpath", "//li[@data-test-pagination-page-btn]"
+                )[-1].get_attribute("data-test-pagination-page-btn")
+            except IndexError:
+                self.pages = 1
             self.get_jobs()
             for i in range(1, int(self.pages)):
                 self.driver.get(f"{self.path}&start={(i)*self.jobs_per_page}")
@@ -101,7 +123,9 @@ class LINKEDIN(object):
 
     def ignore_jobs(self) -> bool:
         res = False
+        time.sleep(random.randint(0, 3))
         self.ignore_keys = self.cfg.get("IGNORE", "desc").split(",")
+
         txt = {
             "title": self.driver.find_element(
                 By.XPATH, "//*[contains(@class, 'jobs-unified-top-card')]"
@@ -114,7 +138,7 @@ class LINKEDIN(object):
         for key in self.ignore_keys:
             for content in txt.keys():
                 if re.search(key.lower(), txt[content], re.I):
-                    print(
+                    log.info(
                         f"Skip application to {self.driver.current_url}, found {key} in {content}"
                     )
         return res
@@ -124,7 +148,7 @@ class LINKEDIN(object):
             self.res_elelements = self.driver.find_elements(bt_by, bt_value)
             return self.res_elelements[0]
         except (exceptions.NoSuchElementException, IndexError):
-            print(f"{bt_name} not found.")
+            log.info(f"{bt_name} not found.")
             return None
 
     def click_next(self, model_name):
@@ -151,38 +175,37 @@ class LINKEDIN(object):
         )
         if apply_button:
             apply_button.click()
-
-        phone_number = self.application_fields(
-            "Phone Number", By.XPATH, "//input[contains(@name,'phoneNumber')]"
-        )
-
-        if phone_number:
-            phone_number.clear()
-            phone_number.send_keys(self.phone)
-
-        for next_ in ("Contact Info", "Resume"):
-            self.click_next(next_)
-
-        self.addtional_questions()
-
-        for next_ in "Review":
-            self.click_next(next_)
-
-        try:
-            submit_button = self.application_fields(
-                "Submit", By.CSS_SELECTOR, "button[aria-label='Submit application']"
-            )
-        except selenium.common.exceptions.NoSuchElementException:
-            submit_button = self.application_fields(
-                "Submit", By.CSS_SELECTOR, "button[aria-label='Submit application']"
+            phone_number = self.application_fields(
+                "Phone Number", By.XPATH, "//input[contains(@name,'phoneNumber')]"
             )
 
-        if submit_button:
-            submit_button.click()
-            print(f"Application Submitted {self.driver.current_url}")
+            if phone_number:
+                phone_number.clear()
+                phone_number.send_keys(self.phone)
+
+            for next_ in ("Contact Info", "Resume"):
+                self.click_next(next_)
+
+            self.addtional_questions()
+
+            for next_ in "Review":
+                self.click_next(next_)
+
+            try:
+                submit_button = self.application_fields(
+                    "Submit", By.CSS_SELECTOR, "button[aria-label='Submit application']"
+                )
+            except selenium.common.exceptions.NoSuchElementException:
+                submit_button = self.application_fields(
+                    "Submit", By.CSS_SELECTOR, "button[aria-label='Submit application']"
+                )
+
+            if submit_button:
+                submit_button.click()
+                log.info(f"Application Submitted {self.driver.current_url}")
+                time.sleep(3)
         else:
-            print(f"Skipping {self.driver.current_url}")
-        time.sleep(3)
+            log.info(f"Skipping {self.driver.current_url}, Apply button not found")
 
     def addtional_questions(self):
         self.click_next("Additional Questions")
@@ -226,14 +249,14 @@ class LINKEDIN(object):
                 )[0].send_keys(answer)
 
             else:
-                print(question_type)
+                log.info(question_type)
 
         except IndexError:
-            print(
+            log.info(
                 f"No Answer found for :  {question} . Skipping  {self.driver.current_url}"
             )
         except Exception as e:
-            print(
+            log.info(
                 f"Exception {e} while answering {question} . Skipping  {self.driver.current_url}"
             )
 
@@ -242,7 +265,7 @@ class LINKEDIN(object):
             job_page = f"{self.JOB}{job_id}"
             self.current_page = self.driver.get(job_page)
             if not self.ignore_jobs():
-                print(f"Applying for {job_page}")
+                log.info(f"Applying for {job_page}")
                 self.easy_apply()
 
 
