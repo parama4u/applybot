@@ -30,7 +30,7 @@ class LINKEDIN(object):
 
     def set_configs(self):
         self.cfg = configparser.ConfigParser()
-        self.cfg.read("LinkedIn/config.ini")
+        self.cfg.read("./LinkedIn/config.ini")
         self.user_name = self.cfg.get("LOGIN", "USERNAME")
         self.password = self.cfg.get("LOGIN", "PASSWORD")
         self.phone = self.cfg.get("LOGIN", "PHONE")
@@ -94,7 +94,7 @@ class LINKEDIN(object):
         time.sleep(random.randint(1, 3))
 
     def search_apply(self):
-        data = pd.read_csv("LinkedIn/search.csv")
+        data = pd.read_csv("./LinkedIn/search.csv")
         for index, record in data.iterrows():
             self.path = f"https://www.linkedin.com/jobs/search/?f_AL=true&f_TPR=r86400&keywords={record['keyword'].upper()}&location={record['location']}"
             self.driver.get(self.path)
@@ -218,7 +218,7 @@ class LINKEDIN(object):
             self.ans_queston(error)
 
     def get_answer(self, question):
-        with open("LinkedIn/additional_questions.csv", "r") as file:
+        with open("./LinkedIn/additional_questions.csv", "r") as file:
             csv_file = csv.DictReader(file)
             for row in csv_file:
                 if row["question"] in question:

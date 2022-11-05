@@ -14,11 +14,12 @@ def apply_linkedin():
 
 
 def move_mouse():
-    while True:
-        x, _ = pyautogui.position()
-        pyautogui.moveTo(x + 200, pyautogui.position().y, duration=1.0)
-        pyautogui.moveTo(x, pyautogui.position().y, duration=0.5)
-        time.sleep(random.randint(0, 10))
+    pass
+    # while True:
+    #     x, _ = pyautogui.position()
+    #     pyautogui.moveTo(x + 200, pyautogui.position().y, duration=1.0)
+    #     pyautogui.moveTo(x, pyautogui.position().y, duration=0.5)
+    #     time.sleep(random.randint(0, 10))
 
 
 # Press the green button in the gutter to run the script.

@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="applybot",
-    version="",
+    version="1.0.0",
     packages=[
         "selenium==4.5.0",
         "webdriver_manager=3.8.3",
