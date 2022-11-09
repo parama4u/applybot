@@ -221,7 +221,7 @@ class LINKEDIN(object):
         with open("./LinkedIn/additional_questions.csv", "r") as file:
             csv_file = csv.DictReader(file)
             for row in csv_file:
-                if row["question"] in question:
+                if row["question"].lower() in question.lower():
                     return row["answer"]
 
     def ans_queston(self, error):
@@ -250,16 +250,22 @@ class LINKEDIN(object):
                     By.TAG_NAME, "input"
                 )[0].send_keys(answer)
 
+            elif question_type == "fb-multi-line-text":
+                answer = self.get_answer(question)
+                error.find_elements(By.TAG_NAME, "div")[0].find_elements(
+                    By.TAG_NAME, "textarea"
+                )[0].send_keys(answer)
+
             else:
                 log.info(question_type)
 
         except IndexError:
             log.info(
-                f"No Answer found for :  {question} . Skipping  {self.driver.current_url}"
+                f"No Answer found for :  {question} : {question_type}. Skipping  {self.driver.current_url}"
             )
         except Exception as e:
             log.info(
-                f"Exception {e} while answering {question} . Skipping  {self.driver.current_url}"
+                f"Exception {e} while answering {question} : {question_type} . Skipping  {self.driver.current_url}"
             )
 
     def iter_apply(self):
