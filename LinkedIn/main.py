@@ -226,6 +226,7 @@ class LINKEDIN(object):
 
     def ans_queston(self, error):
         question = error.text.replace("\nRequired\nPlease enter a valid answer", "")
+        question_type = "unknown"
         try:
             question_type = error.find_elements(By.TAG_NAME, "div")[0].get_attribute(
                 "class"
