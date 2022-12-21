@@ -178,7 +178,7 @@ class LINKEDIN(object):
         if apply_button:
             apply_button.click()
             phone_number = self.application_fields(
-                "Phone Number", By.XPATH, "//input[contains(@name,'phoneNumber')]"
+                "Phone Number", By.XPATH, "//input[contains(@id,'phoneNumber')]"
             )
 
             if phone_number:

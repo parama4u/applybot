@@ -1,9 +1,12 @@
 keyword,location
-Test Architect,Netherlands
-qa,Netherlands
-test,Netherlands
-Automation,Netherlands
-Test Architect,Denmark
+Test,Poland
+QA,Poland
+Automation,Poland
+Engineering manager,Poland
+Test,European Union
+QA,European Union
+Automation,European Union
+Engineering manager,European Union
 qa,Denmark
 test,Denmark
 Automation,Denmark
@@ -31,3 +34,8 @@ Test Architect,Sweden
 qa,Sweden
 test,Sweden
 Automation,Sweden
+Test Architect,Netherlands
+qa,Netherlands
+test,Netherlands
+Automation,Netherlands
+Test Architect,Denmark
