@@ -131,3 +131,4 @@ dmypy.json
 .idea/
 
 LinkedIn/config.ini
+LinkedIn/search.csv

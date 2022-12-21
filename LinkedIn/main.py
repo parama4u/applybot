@@ -210,6 +210,15 @@ class LINKEDIN(object):
             log.info(f"Skipping {self.driver.current_url}, Apply button not found")
 
     def addtional_questions(self):
+        """Choose resume"""
+        resume_chooser = self.driver.find_elements(
+            By.CSS_SELECTOR, "div[class='jobs-resume-picker__resume-list']"
+        )
+        if resume_chooser:
+            self.driver.find_elements(
+                By.CSS_SELECTOR, "button[aria-label='Choose Resume']"
+            )[0].click()
+
         self.click_next("Additional Questions")
         self.application_fields(
             "Filed with errors", By.CSS_SELECTOR, "div[aria-invalid='true']"
